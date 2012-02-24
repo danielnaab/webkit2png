@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
-# webkit2png - makes screenshots of webpages
-# http://www.paulhammond.org/webkit2png
-
+# webkit2png - makes screenshots of webpages.
+#     https://github.com/danielnaab/webkit2png
+# Refactored from original source:
+#     http://www.paulhammond.org/webkit2png
+#
 __version__ = "0.5"
 
 # Copyright (c) 2009 Paul Hammond
@@ -25,7 +27,6 @@ __version__ = "0.5"
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-
 import sys
 import optparse
 
