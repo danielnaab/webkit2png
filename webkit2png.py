@@ -25,7 +25,7 @@ __version__ = "0.5"
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-                
+
 import sys
 import optparse
 
@@ -36,7 +36,7 @@ try:
   import objc
 except ImportError:
   print "Cannot find pyobjc library files.  Are you sure it is installed?"
-  sys.exit() 
+  sys.exit()
 
 
 
@@ -106,15 +106,15 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             AppKit.NSGraphicsContext.currentContext().setImageInterpolation_(
                     AppKit.NSImageInterpolationHigh)
             thumbRect = Foundation.NSMakeRect(0.0, 0.0, thumbWidth, thumbHeight)
-            clipRect = Foundation.NSMakeRect(0.0, 
-                    thumbHeight-options.clipheight, 
+            clipRect = Foundation.NSMakeRect(0.0,
+                    thumbHeight-options.clipheight,
                     options.clipwidth, options.clipheight)
             bitmapdata.drawInRect_(thumbRect)
             thumbOutput = AppKit.NSBitmapImageRep.alloc().initWithFocusedViewRect_(thumbRect)
             clipOutput = AppKit.NSBitmapImageRep.alloc().initWithFocusedViewRect_(clipRect)
             scratch.unlockFocus()
-           
-            # save the thumbnails as pngs 
+
+            # save the thumbnails as pngs
             if options.thumb:
                 thumbOutput.representationUsingType_properties_(
                         AppKit.NSPNGFileType,None
@@ -129,7 +129,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             if self.urls[0] == '-':
                 url = sys.stdin.readline().rstrip()
                 if not url: AppKit.NSApplication.sharedApplication().terminate_(None)
-            else: 
+            else:
                 url = self.urls.pop(0)
         else:
             AppKit.NSApplication.sharedApplication().terminate_(None)
@@ -139,7 +139,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
         if not webview.mainFrame().provisionalDataSource():
             print " ... not a proper url?"
             self.getURL(webview)
-     
+
     def resetWebview(self,webview):
         rect = Foundation.NSMakeRect(0,0,self.options.initWidth,self.options.initHeight)
         window = webview.window()
@@ -151,7 +151,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             webview.setDrawsBackground_(objc.NO)
 
         webview.setFrame_(rect)
-    
+
     def resizeWebview(self,view):
         view.window().display()
         view.window().setContentSize_(view.bounds().size)
@@ -180,21 +180,102 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
     def doGrab(self,timer):
             webview = timer.userInfo()
             view = webview.mainFrame().frameView().documentView()
-            
+
             self.resizeWebview(view)
 
             URL = webview.mainFrame().dataSource().initialRequest().URL().absoluteString()
-            filename = self.makeFilename(URL, self.options) 
+            filename = self.makeFilename(URL, self.options)
 
-            bitmapdata = self.captureView(view)  
+            bitmapdata = self.captureView(view)
             self.saveImages(bitmapdata,filename,self.options)
 
             print " ... done"
             self.getURL(webview)
 
+def create_pngs(urls, **kwargs):
+    """
+    Generate PNG.  Pass in arguments to override default options.
+    """
+    defaults = {
+      'scale': 0.25,
+      'clipheight': 150.0,
+      'width': 800.0,
+      'nojs': None,
+      'clipped': None,
+      'fullsize': None,
+      'thumb': None,
+      'height': 600.0,
+      'delay': 0,
+      'datestamp': None,
+      'filename': '',
+      'dir': './',
+      'zoom': 1.0,
+      'noimages': None,
+      'debug': None,
+      'js': None,
+      'transparent': False,
+      'md5': None,
+      'clipwidth': 200.0
+    }
+    defaults.update(**kwargs)
+    class Options(object):
+      pass
+    options = Options()
+    options.__dict__.update(**defaults)
+
+    # make sure we're outputing something
+    if not (options.fullsize or options.thumb or options.clipped):
+      options.fullsize = True
+      options.thumb = True
+      options.clipped = True
+    # work out the initial size of the browser window
+    #  (this might need to be larger so clipped image is right size)
+    options.initWidth = (options.clipwidth / options.scale)
+    options.initHeight = (options.clipheight / options.scale)
+    options.width *= options.zoom
+    if options.width>options.initWidth:
+       options.initWidth = options.width
+    if options.height>options.initHeight:
+       options.initHeight = options.height
+
+    app = AppKit.NSApplication.sharedApplication()
+
+    # create an app delegate
+    delegate = AppDelegate.alloc().init()
+    AppKit.NSApp().setDelegate_(delegate)
+
+    # create a window
+    rect = Foundation.NSMakeRect(0,0,100,100)
+    win = AppKit.NSWindow.alloc()
+    win.initWithContentRect_styleMask_backing_defer_ (rect,
+            AppKit.NSBorderlessWindowMask, 2, 0)
+    if options.debug:
+      win.orderFrontRegardless()
+    # create a webview object
+    webview = WebKit.WebView.alloc()
+    webview.initWithFrame_(rect)
+    # turn off scrolling so the content is actually x wide and not x-15
+    webview.mainFrame().frameView().setAllowsScrolling_(objc.NO)
+
+    webview.setPreferencesIdentifier_('webkit2png')
+    webview.preferences().setLoadsImagesAutomatically_(not options.noimages)
+    webview.preferences().setJavaScriptEnabled_(not options.nojs)
+
+    if options.zoom != 1.0:
+      webview._setZoomMultiplier_isTextOnly_(options.zoom, False)
+
+    # add the webview to the window
+    win.setContentView_(webview)
+
+    # create a LoadDelegate
+    loaddelegate = WebkitLoad.alloc().init()
+    loaddelegate.options = options
+    loaddelegate.urls = urls
+    webview.setFrameLoadDelegate_(loaddelegate)
+
+    app.run()
 
 def main():
-
     # parse the command line
     usage = """%prog [options] [http://example.net/ ...]
 
@@ -259,57 +340,8 @@ examples:
           return
     if options.scale == 0:
       cmdparser.error("scale cannot be zero")
-    # make sure we're outputing something
-    if not (options.fullsize or options.thumb or options.clipped):
-      options.fullsize = True
-      options.thumb = True
-      options.clipped = True
-    # work out the initial size of the browser window
-    #  (this might need to be larger so clipped image is right size)
-    options.initWidth = (options.clipwidth / options.scale)
-    options.initHeight = (options.clipheight / options.scale)
-    options.width *= options.zoom
-    if options.width>options.initWidth:
-       options.initWidth = options.width
-    if options.height>options.initHeight:
-       options.initHeight = options.height
-      
-    app = AppKit.NSApplication.sharedApplication()
-    
-    # create an app delegate
-    delegate = AppDelegate.alloc().init()
-    AppKit.NSApp().setDelegate_(delegate)
 
-    # create a window
-    rect = Foundation.NSMakeRect(0,0,100,100)
-    win = AppKit.NSWindow.alloc()
-    win.initWithContentRect_styleMask_backing_defer_ (rect, 
-            AppKit.NSBorderlessWindowMask, 2, 0)
-    if options.debug:
-      win.orderFrontRegardless()
-    # create a webview object
-    webview = WebKit.WebView.alloc()
-    webview.initWithFrame_(rect)
-    # turn off scrolling so the content is actually x wide and not x-15
-    webview.mainFrame().frameView().setAllowsScrolling_(objc.NO)
-
-    webview.setPreferencesIdentifier_('webkit2png')
-    webview.preferences().setLoadsImagesAutomatically_(not options.noimages)
-    webview.preferences().setJavaScriptEnabled_(not options.nojs)
-
-    if options.zoom != 1.0:
-      webview._setZoomMultiplier_isTextOnly_(options.zoom, False)
-
-    # add the webview to the window
-    win.setContentView_(webview)
-    
-    # create a LoadDelegate
-    loaddelegate = WebkitLoad.alloc().init()
-    loaddelegate.options = options
-    loaddelegate.urls = args
-    webview.setFrameLoadDelegate_(loaddelegate)
-    
-    app.run()    
+    return create_png(args, **vars(options))
 
 if __name__ == '__main__' : main()
 
