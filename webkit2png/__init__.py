@@ -85,7 +85,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
        import os
        dir = os.path.abspath(os.path.expanduser(options.dir))
        if not os.path.exists(options.dir):
-	        os.makedirs(dir)
+          os.makedirs(dir)
        return os.path.join(dir,filename)
 
     def saveImages(self,bitmapdata,filename,options):
@@ -193,7 +193,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             print " ... done"
             self.getURL(webview)
 
-def create_pngs(*urls, **kwargs):
+def create_pngs(*urls, **options):
     """
     Generate PNG.  Pass in arguments to override default options.
     """
@@ -218,26 +218,22 @@ def create_pngs(*urls, **kwargs):
       'md5': None,
       'clipwidth': 200.0
     }
-    defaults.update(**kwargs)
-    class Options(object):
-      pass
-    options = Options()
-    options.__dict__.update(**defaults)
+    #defaults.update(**kwargs)
 
     # make sure we're outputing something
-    if not (options.fullsize or options.thumb or options.clipped):
-      options.fullsize = True
-      options.thumb = True
-      options.clipped = True
+    if not (options['fullsize'] or options['thumb'] or options['clipped']):
+      options['fullsize'] = True
+      options['thumb'] = True
+      options['clipped'] = True
     # work out the initial size of the browser window
     #  (this might need to be larger so clipped image is right size)
-    options.initWidth = (options.clipwidth / options.scale)
-    options.initHeight = (options.clipheight / options.scale)
-    options.width *= options.zoom
-    if options.width>options.initWidth:
-       options.initWidth = options.width
-    if options.height>options.initHeight:
-       options.initHeight = options.height
+    options['initWidth'] = (options['clipwidth'] / options['scale'])
+    options['initHeight'] = (options['clipheight'] / options['scale'])
+    options['width'] *= options['zoom']
+    if options['width']>options['initWidth']:
+       options['initWidth'] = options['width']
+    if options['height']>options['initHeight']:
+       options['initHeight'] = options['height']
 
     app = AppKit.NSApplication.sharedApplication()
 
@@ -250,7 +246,7 @@ def create_pngs(*urls, **kwargs):
     win = AppKit.NSWindow.alloc()
     win.initWithContentRect_styleMask_backing_defer_ (rect,
             AppKit.NSBorderlessWindowMask, 2, 0)
-    if options.debug:
+    if options['debug']:
       win.orderFrontRegardless()
     # create a webview object
     webview = WebKit.WebView.alloc()
@@ -259,19 +255,19 @@ def create_pngs(*urls, **kwargs):
     webview.mainFrame().frameView().setAllowsScrolling_(objc.NO)
 
     webview.setPreferencesIdentifier_('webkit2png')
-    webview.preferences().setLoadsImagesAutomatically_(not options.noimages)
-    webview.preferences().setJavaScriptEnabled_(not options.nojs)
+    webview.preferences().setLoadsImagesAutomatically_(not options['noimages'])
+    webview.preferences().setJavaScriptEnabled_(not options['nojs'])
 
-    if options.zoom != 1.0:
-      webview._setZoomMultiplier_isTextOnly_(options.zoom, False)
+    if options['zoom'] != 1.0:
+      webview._setZoomMultiplier_isTextOnly_(options['zoom'], False)
 
     # add the webview to the window
     win.setContentView_(webview)
 
     # create a LoadDelegate
     loaddelegate = WebkitLoad.alloc().init()
-    loaddelegate.options = options
-    loaddelegate.urls = urls
+    loaddelegate.options = optparse.Values(defaults=options)
+    loaddelegate.urls = list(urls)
     webview.setFrameLoadDelegate_(loaddelegate)
 
     app.run()
@@ -342,7 +338,6 @@ examples:
     if options.scale == 0:
       cmdparser.error("scale cannot be zero")
 
-    return create_pngs(*args, **vars(options))
+    return create_pngs(*args, **options.__dict__)
 
 if __name__ == '__main__' : main()
-

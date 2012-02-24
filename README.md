@@ -24,25 +24,25 @@ keyword arguments.   Here are a two equivalent examples:
 
     # These are the default options, used for demonstration:
     options = {
-      'scale': 0.25,
-      'clipheight': 150.0,
-      'width': 800.0,
-      'nojs': None,
-      'clipped': None,
-      'fullsize': None,
-      'thumb': None,
-      'height': 600.0,
-      'delay': 0,
-      'datestamp': None,
-      'filename': '',
-      'dir': './',
-      'zoom': 1.0,
-      'noimages': None,
-      'debug': None,
-      'js': None,
-      'transparent': False,
-      'md5': None,
-      'clipwidth': 200.0
+        'scale': 0.25,
+        'clipheight': 150.0,
+        'width': 800.0,
+        'nojs': None,
+        'clipped': None,
+        'fullsize': None,
+        'thumb': None,
+        'height': 600.0,
+        'delay': 0,
+        'datestamp': None,
+        'filename': '',
+        'dir': './',
+        'zoom': 1.0,
+        'noimages': None,
+        'debug': None,
+        'js': None,
+        'transparent': False,
+        'md5': None,
+        'clipwidth': 200.0
     }
     urls = ['http://www.google.com', 'http://www.yahoo.com']
     create_pngs(*urls, **options)
