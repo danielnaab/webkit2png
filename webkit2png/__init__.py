@@ -193,7 +193,7 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             print " ... done"
             self.getURL(webview)
 
-def create_pngs(urls, **kwargs):
+def create_pngs(*urls, **kwargs):
     """
     Generate PNG.  Pass in arguments to override default options.
     """
@@ -342,7 +342,7 @@ examples:
     if options.scale == 0:
       cmdparser.error("scale cannot be zero")
 
-    return create_png(args, **vars(options))
+    return create_pngs(*args, **vars(options))
 
 if __name__ == '__main__' : main()
 
