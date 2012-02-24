@@ -6,6 +6,8 @@ webkit2png is a command line tool that creates png screenshots of webpages.
 This fork has refactored out the png generation into a separate function that
 may be treated as a library.  In addition, it is pip-installable via setuptools.
 
+    $ pip install -e git+git@github.com:danielnaab/webkit2png.git#egg=webkit2png
+
 For more details, visit http://www.paulhammond.org/webkit2png/
 
 Usage
