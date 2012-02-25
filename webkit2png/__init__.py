@@ -193,11 +193,11 @@ class WebkitLoad (Foundation.NSObject, WebKit.protocols.WebFrameLoadDelegate):
             print " ... done"
             self.getURL(webview)
 
-def create_pngs(*urls, **options):
+def create_pngs(*urls, **kwargs):
     """
     Generate PNG.  Pass in arguments to override default options.
     """
-    defaults = {
+    options = {
       'scale': 0.25,
       'clipheight': 150.0,
       'width': 800.0,
@@ -218,7 +218,7 @@ def create_pngs(*urls, **options):
       'md5': None,
       'clipwidth': 200.0
     }
-    #defaults.update(**kwargs)
+    options.update(**kwargs)
 
     # make sure we're outputing something
     if not (options['fullsize'] or options['thumb'] or options['clipped']):
