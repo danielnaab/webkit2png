@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from setuptools import setup
 
@@ -18,4 +20,5 @@ setup(
         'Topic :: Utilities',
         'License :: OSI Approved :: BSD License',
     ],
+    scripts=['webkit2png/bin/webkit2png'],
 )
